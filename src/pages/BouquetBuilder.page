@@ -1,0 +1,91 @@
+<apex:page standardController="Bouquet__c" extensions="BouquetBuilderController" >
+    <apex:form >
+        <apex:sectionHeader title="{!$ObjectType.Bouquet__c.label} Edit" subtitle="{!IF(ISBLANK(Bouquet__c.Id), 'New ' + $ObjectType.Bouquet__c.label, Bouquet__c.Name)}"/>
+        <apex:pageBlock title="{!$ObjectType.Bouquet__c.label} Information" mode="Edit">
+            <apex:pageMessages />
+
+            <!-- Page Save/Cancel buttons -->
+            <apex:pageBlockButtons >
+                <apex:commandButton action="{!save}" value="Save"/>
+                <apex:commandButton action="{!cancel}" value="Cancel"/>
+            </apex:pageBlockButtons>
+
+
+            <!-- Page Bouquet Details Section -->
+            <apex:pageBlockSection title="{!$ObjectType.Bouquet__c.label} Details" columns="2">
+                <apex:inputField value="{!Bouquet__c.Customer__c}" required="true" id="bqCustomer"/>
+                <apex:inputField value="{!Bouquet__c.Delivery_Date__c}" required="true"/>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection columns="1" showHeader="false" >
+            	<apex:inputField value="{!Bouquet__c.Deliver_To__c}" required="true"/>
+				<apex:inputField value="{!Bouquet__c.Message__c}" required="true"/>
+            </apex:pageBlockSection>
+
+            <!-- Page Summary Section -->
+            <apex:pageBlockSection title="Summary" columns="2">
+                <apex:outputPanel id="panSumChart">
+                    <apex:outputPanel rendered="{!summaryPieData.size == 0}" >
+                        <apex:pageMessage summary="No Flowers have been added to this Bouquet." severity="info" strength="0" />
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!summaryPieData.size > 0}" >
+                        <apex:chart height="250" width="350" data="{!summaryPieData}">
+                            <apex:pieSeries dataField="quantity" labelField="color" colorSet="{!summaryPieChartColorSet}" />
+                            <apex:legend position="right" />
+                        </apex:chart>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+                <apex:pageBlockSectionItem>
+                    <apex:outputPanel id="panTotalCost">
+                    <apex:outputLabel for="outputTotalCost">Total Cost</apex:outputLabel>
+                    <apex:outputText value="{0, number, $#,##0.00}" id="outputTotalCost">
+                        <apex:param value="{!totalCost}" />
+                    </apex:outputText>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+
+            <apex:actionRegion renderRegionOnly="false">
+                <!-- Page Flowers Section -->
+                <apex:pageBlockSection title="{!$ObjectType.Product2.labelPlural}" columns="1">
+                    <apex:pageBlockSectionItem>
+                    <apex:outputLabel value="{!$ObjectType.Product2.Fields.Family.Label}" for="selFlowers" />
+                    <apex:selectList value="{!flowerFamily}" multiselect="false" size="1" id="selFlowers">
+                        <apex:actionSupport event="onchange" action="{!changeFlowerFamily}" oncomplete="validateQuantityErr('{!$Component.selFlowers}');" reRender="panSumChart,panTotalCost,divFlowers,divPagination" />
+                        <apex:selectOptions value="{!flowerFamilies}"/>
+                    </apex:selectList>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+
+                <!-- Flowers Table -->
+                <apex:pageBlockTable value="{!bouquetFlowers}" var="f" id="divFlowers">
+                    <apex:column headerValue="{!$ObjectType.Bloom__c.Fields.Quantity__c.Label}" >
+                        <apex:inputField value="{!f.bloom.Quantity__c}" required="true" />
+                    </apex:column>
+                    <apex:column headerValue="{!$ObjectType.Product2.Fields.Name.Label}" >
+                        <apex:outputLink value="/{!f.flower.Id}" target="_blank">{!f.flower.Name}</apex:outputLink>
+                    </apex:column>
+                    <apex:column value="{!f.flower.Color__c}" style="background-color: {!f.flower.HTML_Color_Code__c}"/>
+                    <apex:column value="{!f.flower.Family}" />
+                    <apex:column value="{!f.flower.Cost__c}" />
+                    <apex:column value="{!f.flower.Inventory_Remaining__c}" />
+                    <apex:column value="{!f.flower.IsActive}" />
+                </apex:pageBlockTable>
+                <!-- Flowers Pagination Controls  -->
+                <apex:outputPanel layout="block" style="text-align:center;margin-top: 5px;" id="divPagination">
+                    <apex:commandButton action="{!first}" disabled="{!!hasPrevious}" value="|<First" reRender="panSumChart,panTotalCost,divFlowers,divPagination"></apex:commandButton>
+                    <apex:commandButton action="{!previous}"  disabled="{!!hasPrevious}" value="Previous" reRender="panSumChart,panTotalCost,divFlowers,divPagination"></apex:commandButton>
+                    <apex:outputText value="Page {!pageNumber} of {!pageCount}" />
+                    <apex:commandButton action="{!next}" disabled="{!!hasNext}" value="Next" reRender="panSumChart,panTotalCost,divFlowers,divPagination"></apex:commandButton>
+                    <apex:commandButton action="{!last}" disabled="{!!hasNext}" value="Last>|" reRender="panSumChart,panTotalCost,divFlowers,divPagination"></apex:commandButton>
+                </apex:outputPanel>
+            </apex:actionRegion>
+
+        </apex:pageBlock>
+    </apex:form>
+    <script type="text/javascript">
+        function validateQuantityErr(selId) {
+            // alert(selId);
+            // alert(document.getElementById(selId));
+        }
+    </script>
+</apex:page>
