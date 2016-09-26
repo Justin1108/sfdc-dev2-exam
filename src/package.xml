@@ -1,24 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-	<types>
-		<members>*</members>
-		<name>ApexClass</name>
-	</types>
-	<types>
-		<members>*</members>
-		<name>ApexComponent</name>
-	</types>
-	<types>
-		<members>*</members>
-		<name>ApexPage</name>
-	</types>
-	<types>
-		<members>*</members>
-		<name>ApexTrigger</name>
-	</types>
-	<types>
-		<members>*</members>
-		<name>StaticResource</name>
-	</types>
-	<version>35.0</version>
+    <types>
+        <members>*</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>ApexComponent</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>ApexPage</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>ApexTrigger</name>
+    </types>
+    <types>
+        <members>Bouquet_Wizard</members>
+        <name>CustomApplication</name>
+    </types>
+    <types>
+        <members>CustomLabels</members>
+        <name>CustomLabels</name>
+    </types>
+    <types>
+        <members>Bloom__c</members>
+        <members>Bouquet__c</members>
+        <members>Lead</members>
+        <members>Product2</members>
+        <name>CustomObject</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>CustomTab</name>
+    </types>
+    <types>
+        <members>Bloom__c-Bloom Layout</members>
+        <members>Bouquet__c-Bouquet Layout</members>
+        <members>Lead-Lead Layout</members>
+        <members>Product2-Product Layout</members>
+        <name>Layout</name>
+    </types>
+    <types>
+        <members>Florist</members>
+        <members>Inventory Manager</members>
+        <name>Profile</name>
+    </types>
+    <types>
+        <members>*</members>
+        <name>StaticResource</name>
+    </types>
+    <version>35.0</version>
 </Package>
