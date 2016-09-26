@@ -34,7 +34,7 @@
                         </apex:chart>
                     </apex:outputPanel>
                 </apex:outputPanel>
-                <apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
                     <apex:outputPanel id="panTotalCost">
                     <apex:outputLabel for="outputTotalCost">Total Cost</apex:outputLabel>
                     <apex:outputText value="{0, number, $#,##0.00}" id="outputTotalCost">
@@ -47,7 +47,7 @@
             <apex:actionRegion renderRegionOnly="false">
                 <!-- Page Flowers Section -->
                 <apex:pageBlockSection title="{!$ObjectType.Product2.labelPlural}" columns="1">
-                    <apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
                     <apex:outputLabel value="{!$ObjectType.Product2.Fields.Family.Label}" for="selFlowers" />
                     <apex:selectList value="{!flowerFamily}" multiselect="false" size="1" id="selFlowers">
                         <apex:actionSupport event="onchange" action="{!changeFlowerFamily}" oncomplete="validateQuantityErr('{!$Component.selFlowers}');" reRender="panSumChart,panTotalCost,divFlowers,divPagination" />
