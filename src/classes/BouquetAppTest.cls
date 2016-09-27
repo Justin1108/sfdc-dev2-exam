@@ -1,36 +1,109 @@
 // Test class for Bouquet Application
 @isTest
 private class BouquetAppTest {
+	// Load Initial data for all test methods
 	@testSetup
 	static void setUpTestData() {
 		List<Lead> customers = Test.loadData(Lead.SObjectType, 'TestData_Customers');
 		List<Product2> flowers = Test.loadData(Product2.SObjectType, 'TestData_Flowers');
-		//System.debug('SetupData-customers: ' + JSON.serialize(customers));
-		//System.debug('SetupData-flowers: ' + JSON.serialize(flowers));
 	}
 
-	// Simplify the method to get existing user. If will fail if the user name is changed.
-	// The better option is to create the new user and assign the Inventory Manager profile
+	// Help method to create test users
+	private static User createUser(Profile p, Integer index) {
+		String idxVal = String.valueOf(index);
+
+		User u = new User();
+		u.ProfileId = p.id;
+
+		u.alias = 'alias' + idxVal;
+		u.email = 'test' + idxVal + '@testclass-abcdefg.com';
+		u.emailencodingkey = 'UTF-8';
+		u.firstname = 'firstname' + idxVal;
+		u.lastname = 'lastname' + idxVal;
+		u.languagelocalekey = 'en_US';
+		u.localesidkey = 'en_US';
+		u.timezonesidkey = 'America/Los_Angeles';
+
+		u.username = u.email;
+
+		return u;
+	}
+
+	// Help method to create Inventory Manager User
 	static User getInventoryManagerUser() {
-		User u = [SELECT Name FROM User WHERE FirstName='Irene' AND LastName='Inventory'];
+		Profile pManager = [SELECT Name FROM Profile WHERE Name='Inventory Manager'];
+		User u = createUser(pManager, 0);
+		
+		//User u = [SELECT Name FROM User WHERE FirstName='Irene' AND LastName='Inventory'];
 		System.debug('Running User: ' + JSON.serialize(u));
 
 		return u;
 	}
 
-	// Simplify the method to get existing user. If will fail if the user name is changed.
-	// The better option is to create the new user and assign the Florist profile
-	static User getFloristUser() {
-		User u = [SELECT Name FROM User WHERE FirstName='Fred' AND LastName='Florist'];
+	// Help method to create Florist User A
+	static User getFloristUserA() {
+		Profile pFlorist = [SELECT Name FROM Profile WHERE Name='Florist'];
+		User u = createUser(pFlorist, 1);
+		//User u = [SELECT Name FROM User WHERE FirstName='Fred' AND LastName='Florist'];
 
 		System.debug('Running User: ' + JSON.serialize(u));
 		return u;
+	}
+
+	// Help method to create Florist User A
+	static User getFloristUserB() {
+		Profile pFlorist = [SELECT Name FROM Profile WHERE Name='Florist'];
+		User u = createUser(pFlorist, 2);
+		//User u = [SELECT Name FROM User WHERE FirstName='Otto' AND LastName='Otherguy'];
+
+		System.debug('Running User: ' + JSON.serialize(u));
+		return u;
+	}
+
+	// Test the data visibility
+	@isTest
+	static void testSecurityDataAccess() {
+		Lead customer = [SELECT Street, FirstName, LastName FROM Lead LIMIT 1];
+		System.runAs(getFloristUserA()) {
+			Bouquet__c bouquet = new Bouquet__c(
+				Customer__c = customer.Id
+				);
+			insert bouquet;
+
+			System.assertEquals(1, [SELECT Id FROM Bouquet__c].size());
+		}		
+
+		System.runAs(getFloristUserB()) {
+			// Florist User B cannot see the bouquet created by Florist User A
+			System.assertEquals(0, [SELECT Id FROM Bouquet__c].size());
+
+			Bouquet__c bouquet = new Bouquet__c(
+				Customer__c = customer.Id
+				);
+			insert bouquet;
+		}
+
+		System.runAs(getInventoryManagerUser()) {
+			// Inventory Manager can see the record created by Florist user(s)
+			System.assertEquals(2, [SELECT Id FROM Bouquet__c].size());
+		}
+	}
+
+	// Test the VF (BouquetBuilder) access right per profiles
+	@isTest
+	static void testSecurityVfAccess() {
+		ApexPage bbPage = [SELECT Id FROM ApexPage WHERE Name='BouquetBuilder'];
+		Profile pFlorist = [SELECT Name FROM Profile WHERE Name='Florist'];
+		Profile pManager = [SELECT Name FROM Profile WHERE Name='Inventory Manager'];
+
+		System.assertEquals(1, [SELECT Id FROM SetupEntityAccess WHERE Parent.Profile.Id = :pFlorist.Id AND SetupEntityId = :bbPage.Id].size());
+		System.assertEquals(0, [SELECT Id FROM SetupEntityAccess WHERE Parent.Profile.Id = :pManager.Id AND SetupEntityId = :bbPage.Id].size());
 	}
 
 	// Test the Most_Used_Color__c and Inventory_Used__c fields
 	@isTest
 	static void testAutoLogic() {
-		System.runAs(getFloristUser()) {
+		System.runAs(getFloristUserA()) {
 			// Get the customer/flower records for the later test
 			Set<String> flowerNames = new Set<String> {
 				'Abracadabra',	// Green
@@ -107,14 +180,88 @@ private class BouquetAppTest {
 	}
 
 
-	// Notice, the test static resource data file cannot be changed otherwise the test might be broken
-	// It's better to split the following test method to multiple methods
+	// Test the User Interactive logic, such as pagination, filter, summary etc
 	@isTest
-	static void testBouquetBuilderController() {
+	static void testPageUXLogic() {
 		PageReference bbRef = Page.BouquetBuilder;
 		Test.setCurrentPage(bbRef);
 
-		System.runAs(getFloristUser()) {
+		System.runAs(getFloristUserA()) {
+			Lead customer = [SELECT Street, FirstName, LastName FROM Lead LIMIT 1];
+
+			ApexPages.StandardController stdCtrl = new ApexPages.StandardController(new Bouquet__c());
+			BouquetBuilderController bbCtrl = new BouquetBuilderController(stdCtrl);
+
+			// Create a new bouquet 
+			Bouquet__c bouquet = (Bouquet__c)stdCtrl.getRecord();
+			bouquet.Customer__c = customer.Id;
+			bouquet.Deliver_To__c = customer.Street;
+			bouquet.Message__c = 'Test Message';
+			bouquet.Delivery_Date__c = Date.today();
+
+			// Set bouquet flowers
+			List<BouquetBuilderController.BouquetFlower> bouquetFlowers = bbCtrl.getBouquetFlowers();
+			// Set the value to check later
+			bouquetFlowers[0].bloom.Quantity__c = 8;
+			Product2 flower1 = bouquetFlowers[0].flower;
+
+			// Test the navigation
+			// Move to next page to make sure the selected flower and quantity are remembered
+			bbCtrl.next();
+
+			// Verify the page number/page count
+			System.assertEquals(2, bbCtrl.getPageNumber());
+			System.assertEquals(Math.ceil([SELECT Id FROM Product2].size() / 5.0), bbCtrl.getPageCount());
+
+			// Verify navigation button status
+			System.assertEquals(true, bbCtrl.hasPrevious);
+			if (bbCtrl.getPageCount() > 2) // 2 is current page
+				System.assertEquals(true, bbCtrl.hasNext);
+
+			// Verify the next/last buttons are disabled on last page
+			bbCtrl.last();
+			System.assertEquals(false, bbCtrl.hasNext);
+
+			// Verify the previous/first buttons are disabled on first page
+			bbCtrl.previous();
+			bbCtrl.first();
+			System.assertEquals(false, bbCtrl.hasPrevious);
+
+			// Verify the Quantity has been kept on page navigation
+			bouquetFlowers = bbCtrl.getBouquetFlowers();
+			System.assertEquals(8, bouquetFlowers[0].bloom.Quantity__c);
+
+			// Move to next
+			bbCtrl.next();
+			bouquetFlowers = bbCtrl.getBouquetFlowers();
+			bouquetFlowers[0].bloom.Quantity__c = 4;
+			Product2 flower2 = bouquetFlowers[0].flower;
+
+			// Test filter
+			SelectOption[] families = bbCtrl.flowerFamilies;
+			bbCtrl.flowerFamily = families[1].getValue(); // Select a family other than all and make sure the total flowers is less than 5
+			// Change the flower family
+			bbCtrl.changeFlowerFamily();
+			System.assertEquals(bbCtrl.getBouquetFlowers().size(), [SELECT Id FROM Product2 WHERE Family = :bbCtrl.flowerFamily].size());
+
+			// verify the totalCost logic 
+			System.assertEquals(8 * flower1.Cost__c + 4 * flower2.Cost__c, bbCtrl.getTotalCost());
+			// Verify the chart data
+			List<BouquetBuilderController.SummaryPieData> pieData = bbCtrl.getSummaryPieData();
+			System.assertEquals(2, pieData.size());
+			System.assertEquals(2, bbCtrl.summaryPieChartColorSet.split(',').size());
+
+		}		
+
+	}
+
+	// Test BouquetBuilder for new record
+	@isTest
+	static void testNewPage() {
+		PageReference bbRef = Page.BouquetBuilder;
+		Test.setCurrentPage(bbRef);
+
+		System.runAs(getFloristUserA()) {
 			Lead customer = [SELECT Street, FirstName, LastName FROM Lead LIMIT 1];
 
 			ApexPages.StandardController stdCtrl = new ApexPages.StandardController(new Bouquet__c());
@@ -132,40 +279,11 @@ private class BouquetAppTest {
 			bouquetFlowers[0].bloom.Quantity__c = 8;
 			Product2 flower1 = bouquetFlowers[0].flower;
 
-			// Test the navigation
-			// Move to next page to make sure the selected flower and quantity are remembered
 			bbCtrl.next();
-			System.assertEquals(true, bbCtrl.hasPrevious);
-			System.assertEquals(true, bbCtrl.hasNext);
-			System.assertEquals(2, bbCtrl.getPageNumber());
-			System.assertEquals(5, bbCtrl.getPageCount());
-
 
 			bouquetFlowers = bbCtrl.getBouquetFlowers();
 			bouquetFlowers[0].bloom.Quantity__c = 4;
 			Product2 flower2 = bouquetFlowers[0].flower;
-
-			// Navigate
-			bbCtrl.previous();
-			bbCtrl.last();
-			System.assertEquals(false, bbCtrl.hasNext);
-			bbCtrl.first();
-			System.assertEquals(false, bbCtrl.hasPrevious);
-
-			// verify the totalCost logic 
-			System.assertEquals(8 * flower1.Cost__c + 4 * flower2.Cost__c, bbCtrl.getTotalCost());
-			// Verify the chart data
-			List<BouquetBuilderController.SummaryPieData> pieData = bbCtrl.getSummaryPieData();
-			System.assertEquals(2, pieData.size());
-			System.assertEquals(2, bbCtrl.summaryPieChartColorSet.split(',').size());
-
-			// Test filter
-			SelectOption[] families = bbCtrl.flowerFamilies;
-			bbCtrl.flowerFamily = families[1].getValue(); // Select a family other than all
-			// Change the flower family
-			bbCtrl.changeFlowerFamily();
-			System.assertEquals(bbCtrl.getBouquetFlowers().size(), [SELECT Id FROM Product2 WHERE Family = :bbCtrl.flowerFamily].size());
-
 
 			PageReference viewPage = bbCtrl.save();
 
@@ -177,56 +295,97 @@ private class BouquetAppTest {
 			System.assertEquals(flower1.Color__c, [SELECT Most_Used_Color__c FROM Lead WHERE Id = :customer.Id].Most_Used_Color__c);
 			// Check the Inventory used
 			System.assertEquals(8, [SELECT Inventory_Used__c FROM Product2 WHERE Id = :flower1.Id].Inventory_Used__c);
+		}		
 
-			// Test Update
-			// Set the flower1 to inactive
-			flower1.Inventory_Used__c = flower1.Initial_Inventory__c;
-			update flower1;
-			System.assertEquals(false, [SELECT IsActive FROM Product2 WHERE Id = :flower1.Id].IsActive);
+	}
 
-			bouquet = [SELECT Name, Customer__c, Deliver_To__c, Delivery_Date__c, Message__c FROM Bouquet__c LIMIT 1];
-			stdCtrl = new ApexPages.StandardController(bouquet);
-			bbCtrl = new BouquetBuilderController(stdCtrl);
+	@isTest
+	static void testEditPage() {
+		PageReference bbRef = Page.BouquetBuilder;
+		Test.setCurrentPage(bbRef);
 
-			bouquet = (Bouquet__c)stdCtrl.getRecord();
+		System.runAs(getFloristUserA()) {
+			Lead customer = [SELECT Street, FirstName, LastName FROM Lead LIMIT 1];
+			Product2 flowerBlue = [SELECT Name, Color__c, Initial_Inventory__c FROM Product2 WHERE Color__c='blue' LIMIT 1];
+			Product2 flowerYellow = [SELECT Name, Color__c, Initial_Inventory__c FROM Product2 WHERE Color__c='yellow' LIMIT 1];
+			Product2 flowerRed = [SELECT Name, Color__c, Initial_Inventory__c FROM Product2 WHERE Color__c='red' LIMIT 1];
+
+			// Prepare the data for update
+			Bouquet__c bouquet = new Bouquet__c();
+			bouquet.Customer__c = customer.Id;
+			bouquet.Deliver_To__c = customer.Street;
+			bouquet.Message__c = 'Test Message';
+			bouquet.Delivery_Date__c = Date.today();
+			insert bouquet;
+
+			Bloom__c bmBlue = new Bloom__c(Bouquet__c=bouquet.Id, Flower__c=flowerBlue.Id, Quantity__c=20);
+			Bloom__c bmYellow = new Bloom__c(Bouquet__c=bouquet.Id, Flower__c=flowerYellow.Id, Quantity__c=10);
+			Bloom__c bmRed = new Bloom__c(Bouquet__c=bouquet.Id, Flower__c=flowerRed.Id, Quantity__c=5);
+			insert new List<Bloom__c> { bmBlue, bmYellow, bmRed };
+
+
+			ApexPages.StandardController stdCtrl = new ApexPages.StandardController(bouquet);
+			BouquetBuilderController bbCtrl = new BouquetBuilderController(stdCtrl);
+
+			// Verify the bouquet is loaded
+			System.assertEquals(bouquet.Customer__c, ((Bouquet__c)stdCtrl.getRecord()).Customer__c);
+			// Verify the blooms and change it for update
+			while (true) {
+				List<BouquetBuilderController.BouquetFlower> bouquetFlowers = bbCtrl.getBouquetFlowers();
+				for (BouquetBuilderController.BouquetFlower bm : bouquetFlowers) {
+					if (bm.flower.Id == flowerBlue.Id) {
+						System.assertEquals(20, bm.bloom.Quantity__c);
+						bm.bloom.Quantity__c = flowerBlue.Initial_Inventory__c; // Use all the quanity to disable the flower
+					}
+					else if (bm.flower.Id == flowerYellow.Id) {
+						System.assertEquals(10, bm.bloom.Quantity__c);
+						bm.bloom.Quantity__c = 0; // Set to zero to remove the flower from bloom
+					}
+					else if (bm.flower.Id == flowerRed.Id) {
+						System.assertEquals(5, bm.bloom.Quantity__c);
+						bm.bloom.Quantity__c = 30; // Update the quantity
+					}
+				}
+				if (bbCtrl.hasNext)
+					bbCtrl.next();
+				else
+					break;
+			} 
+			// Set the value for update on bouquet
+			bouquet = ((Bouquet__c)stdCtrl.getRecord());
 			bouquet.Message__c = 'Test Message 2';
 
-			// Verify the inactive product2 is listed
-			bouquetFlowers = bbCtrl.getBouquetFlowers();
-			System.assertEquals(flower1.Id, bouquetFlowers[0].flower.Id);
-			System.assertEquals(false, bouquetFlowers[0].flower.IsActive);
-			System.assertEquals(8, bouquetFlowers[0].bloom.Quantity__c);
+			PageReference viewPage = bbCtrl.save();
 
-			// Move the next page
-			bbCtrl.next();
-			bouquetFlowers = bbCtrl.getBouquetFlowers();
-			System.assertEquals(4, bouquetFlowers[0].bloom.Quantity__c); // Check the loading result.
-			bouquetFlowers[0].bloom.Quantity__c = 0; // Set to 0 to remove the product
-
-			bbCtrl.next();
-			bouquetFlowers = bbCtrl.getBouquetFlowers();
-			bouquetFlowers[0].bloom.Quantity__c = 16;
-			Product2 flower3 = bouquetFlowers[0].flower;
-
-			viewPage = bbCtrl.save();
-			// Verify the update on Bouquet Object
+			// Verify the bouquet record
 			System.assertEquals(bouquet.Message__c, [SELECT Message__c FROM Bouquet__c WHERE Id = :bouquet.Id].Message__c);
 			Map<Id, Bloom__c> bmMap = new Map<Id, Bloom__c>();
 			for (Bloom__c bm : [SELECT Id, Flower__c, Quantity__c FROM Bloom__c WHERE Bouquet__c=:bouquet.Id]) {
 				bmMap.put(bm.Flower__c, bm);
 			}
-			System.assert(bmMap.containsKey(flower1.Id));
-			System.assert(!bmMap.containsKey(flower2.Id));
-			Bloom__c bm3 = bmMap.get(flower3.Id);
-			System.assertEquals(16, bm3.Quantity__c);
+			System.assert(bmMap.containsKey(flowerBlue.Id));
+			System.assert(bmMap.containsKey(flowerRed.Id));
+			// Verify the flowerYellow has been removed
+			System.assert(!bmMap.containsKey(flowerYellow.Id)); 
 
-			System.assertEquals(0, [SELECT Inventory_Used__c FROM Product2 WHERE Id=:flower2.Id].Inventory_Used__c); // 
-			System.assertEquals(flower3.Color__c, [SELECT Most_Used_Color__c FROM Lead WHERE Id = :customer.Id].Most_Used_Color__c);
+			// Verify the quantity of flowerRed has been updated
+			bmRed = bmMap.get(flowerRed.Id);
+			System.assertEquals(30, bmRed.Quantity__c);
 
-			System.debug(JSON.serialize([SELECT Name, Quantity__c, Flower__c, Bouquet__c FROM Bloom__c]));
+			// Verify flowerBlue has been disabled beause the invertory is zero
+			System.assertEquals(false, [SELECT IsActive FROM Product2 WHERE Id = :flowerBlue.Id].IsActive);
+			// Verify the yellow flower's inventory has been reset
+			System.assertEquals(0, [SELECT Inventory_Used__c FROM Product2 WHERE Id=:flowerYellow.Id].Inventory_Used__c); // 
+			// Verify the most used color
+			System.assertEquals(flowerBlue.Color__c, [SELECT Most_Used_Color__c FROM Lead WHERE Id = :customer.Id].Most_Used_Color__c);
 			
 		}		
 
+	}
+
+	@isTest
+	static void testBulkUpsert() {
+		
 	}
 
 }
