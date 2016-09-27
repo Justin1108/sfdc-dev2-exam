@@ -72,6 +72,8 @@ public without sharing class BouquetService {
 			Id flowerId = (Id)r.get('Flower__c');
 
 			Integer quantity = Integer.valueOf(r.get('expr0'));
+			Product2 flower = flowers.get(flowerId);
+			if (quantity > flower.Initial_Inventory__c) quantity = (Integer)flower.Initial_Inventory__c; // The used amount should not bigger than initial amount
 
 			flowerMap.put(flowerId, new Product2(
 				Id = flowerId,

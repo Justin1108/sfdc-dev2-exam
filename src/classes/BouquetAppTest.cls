@@ -188,11 +188,40 @@ private class BouquetAppTest {
 			stdCtrl = new ApexPages.StandardController(bouquet);
 			bbCtrl = new BouquetBuilderController(stdCtrl);
 
+			bouquet = (Bouquet__c)stdCtrl.getRecord();
+			bouquet.Message__c = 'Test Message 2';
+
 			// Verify the inactive product2 is listed
 			bouquetFlowers = bbCtrl.getBouquetFlowers();
 			System.assertEquals(flower1.Id, bouquetFlowers[0].flower.Id);
 			System.assertEquals(false, bouquetFlowers[0].flower.IsActive);
 			System.assertEquals(8, bouquetFlowers[0].bloom.Quantity__c);
+
+			// Move the next page
+			bbCtrl.next();
+			bouquetFlowers = bbCtrl.getBouquetFlowers();
+			System.assertEquals(4, bouquetFlowers[0].bloom.Quantity__c); // Check the loading result.
+			bouquetFlowers[0].bloom.Quantity__c = 0; // Set to 0 to remove the product
+
+			bbCtrl.next();
+			bouquetFlowers = bbCtrl.getBouquetFlowers();
+			bouquetFlowers[0].bloom.Quantity__c = 16;
+			Product2 flower3 = bouquetFlowers[0].flower;
+
+			viewPage = bbCtrl.save();
+			// Verify the update on Bouquet Object
+			System.assertEquals(bouquet.Message__c, [SELECT Message__c FROM Bouquet__c WHERE Id = :bouquet.Id].Message__c);
+			Map<Id, Bloom__c> bmMap = new Map<Id, Bloom__c>();
+			for (Bloom__c bm : [SELECT Id, Flower__c, Quantity__c FROM Bloom__c WHERE Bouquet__c=:bouquet.Id]) {
+				bmMap.put(bm.Flower__c, bm);
+			}
+			System.assert(bmMap.containsKey(flower1.Id));
+			System.assert(!bmMap.containsKey(flower2.Id));
+			Bloom__c bm3 = bmMap.get(flower3.Id);
+			System.assertEquals(16, bm3.Quantity__c);
+
+			System.assertEquals(0, [SELECT Inventory_Used__c FROM Product2 WHERE Id=:flower2.Id].Inventory_Used__c); // 
+			System.assertEquals(flower3.Color__c, [SELECT Most_Used_Color__c FROM Lead WHERE Id = :customer.Id].Most_Used_Color__c);
 
 			System.debug(JSON.serialize([SELECT Name, Quantity__c, Flower__c, Bouquet__c FROM Bloom__c]));
 			

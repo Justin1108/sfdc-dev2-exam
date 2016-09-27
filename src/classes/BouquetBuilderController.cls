@@ -169,9 +169,9 @@ public with sharing class BouquetBuilderController {
 
 
     // Return true if there's error on page level
-    public Boolean getHasErrors() {
-    	return ApexPages.hasMessages(ApexPages.Severity.Error);
-    }
+    //public Boolean getHasErrors() {
+    //	return ApexPages.hasMessages(ApexPages.Severity.Error);
+    //}
 
     // returns the page number of the current page set
     public Integer getPageNumber() {
@@ -279,6 +279,7 @@ public with sharing class BouquetBuilderController {
 
 	public PageReference save() {
 		System.debug(LoggingLevel.DEBUG, 'Enter save()');
+		PageReference successPage = null; 
 
 		updateBouquetFlowers();
 
@@ -349,14 +350,18 @@ public with sharing class BouquetBuilderController {
 			BouquetService service = new BouquetService();
 			service.updateMostUsedColorForCustomers(new Set<Id> { bouquet.Customer__c });
 			service.updateUsedInventoryForFlowers(affectFlowerIds);
+
+			successPage = new ApexPages.StandardController(bouquet).view();
 		} catch (Exception ex) {
 			if (!isUpdate) 
 				bouquet.Id = null; 
+
+			ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, ex.getMessage()));
+
 		} finally {
 			BouquetService.disableBloomTriggerLogic = false; // re-enable it
 		}
 
-		PageReference successPage = new ApexPages.StandardController(bouquet).view();
 
 		System.debug(LoggingLevel.DEBUG, 'Exit save()');
 
