@@ -50,7 +50,7 @@
                     <apex:pageBlockSectionItem >
                     <apex:outputLabel value="{!$ObjectType.Product2.Fields.Family.Label}" for="selFlowers" />
                     <apex:selectList value="{!flowerFamily}" multiselect="false" size="1" id="selFlowers">
-                        <apex:actionSupport event="onchange" action="{!changeFlowerFamily}" oncomplete="validateQuantityErr('{!$Component.selFlowers}');" reRender="panSumChart,panTotalCost,divFlowers,divPagination" />
+                        <apex:actionSupport event="onchange" action="{!changeFlowerFamily}" oncomplete="onValidateQuantityErr('{!$Component.selFlowers}');" reRender="panSumChart,panTotalCost,divFlowers,divPagination" />
                         <apex:selectOptions value="{!flowerFamilies}"/>
                     </apex:selectList>
                     </apex:pageBlockSectionItem>
@@ -83,9 +83,9 @@
         </apex:pageBlock>
     </apex:form>
     <script type="text/javascript">
-        function validateQuantityErr(selId) {
-            // alert(selId);
-            // alert(document.getElementById(selId));
+        // Revert the selected family back if there's validation error (quantity is empty)
+        function onValidateQuantityErr(selId) {
+            // No requirement for it, just skip it
         }
     </script>
 </apex:page>

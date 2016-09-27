@@ -10,6 +10,7 @@ public without sharing class BouquetService {
 		
 	}
 
+	// Return the parent customer Id of the given bouquent Ids
 	public Set<Id> getCustomerIds(Set<Id> bouquetIds) {
 		System.debug(LoggingLevel.DEBUG, 'Enter BouquetService.getCustomerIds()');
 		System.debug(LoggingLevel.DEBUG, 'bouquetIds: ' + JSON.serialize(bouquetIds));
@@ -24,6 +25,7 @@ public without sharing class BouquetService {
 		return cIds;
 	}
 
+	// Update the Most_Used_Color__c field for the given customers by customerIds
 	public void updateMostUsedColorForCustomers(Set<Id> customerIds) {
 		System.debug(LoggingLevel.DEBUG, 'Enter BouquetService.updateMostUsedColorForCustomers()');
 		System.debug(LoggingLevel.DEBUG, 'customerIds: ' + JSON.serialize(customerIds));
@@ -59,6 +61,7 @@ public without sharing class BouquetService {
 		System.debug(LoggingLevel.DEBUG, 'Exit BouquetService.updateMostUsedColorForCustomers()');
 	}
 
+	// Update the Inventory_Used__c field for the given flowers/Product2 by the flowerIds
 	public void updateUsedInventoryForFlowers(Set<Id> flowerIds) {
 		System.debug(LoggingLevel.DEBUG, 'Enter BouquetService.updateUsedInventoryForFlowers()');
 		System.debug(LoggingLevel.DEBUG, 'flowerIds: ' + JSON.serialize(flowerIds));
@@ -73,7 +76,8 @@ public without sharing class BouquetService {
 
 			Integer quantity = Integer.valueOf(r.get('expr0'));
 			Product2 flower = flowers.get(flowerId);
-			if (quantity > flower.Initial_Inventory__c) quantity = (Integer)flower.Initial_Inventory__c; // The used amount should not bigger than initial amount
+			// We don't need it because a validation rule has enable it
+			//if (quantity > flower.Initial_Inventory__c) quantity = (Integer)flower.Initial_Inventory__c; // The used amount should not bigger than initial amount
 
 			flowerMap.put(flowerId, new Product2(
 				Id = flowerId,

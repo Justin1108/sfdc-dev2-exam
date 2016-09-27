@@ -299,6 +299,7 @@ private class BouquetAppTest {
 
 	}
 
+	// Test BoquetBuilder for existing record / Edit
 	@isTest
 	static void testEditPage() {
 		PageReference bbRef = Page.BouquetBuilder;
@@ -383,6 +384,7 @@ private class BouquetAppTest {
 
 	}
 
+	// Test the bulk data DMLs
 	@isTest
 	static void testBulkUpsert() {
 		List<Bouquet__c> bqList = new List<Bouquet__c>();

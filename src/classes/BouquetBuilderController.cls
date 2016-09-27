@@ -43,8 +43,9 @@ public with sharing class BouquetBuilderController {
 	public Map<Id, Product2> flowerMap;
 
 
-
+	// Variabe/property for the Flower Family select/dropdownlist
 	public String flowerFamily { get; set; }
+	//  Variabe/property for the list of options for Flower Family select/dropdownlist
 	public SelectOption[] flowerFamilies {
 		get {
 			System.debug(LoggingLevel.DEBUG, 'Enter flowerFamilies-get');
@@ -64,6 +65,7 @@ public with sharing class BouquetBuilderController {
 	}
 
 	// Standard List Controller for the flowers in bouquet to select
+	// We use standard set controller for the pagination
 	public ApexPages.StandardSetController setCon {
 		get {
 			if (setCon == null) {
@@ -76,6 +78,7 @@ public with sharing class BouquetBuilderController {
 	}
 
 	// The available flowers for the current page
+	// The addtional property - Quantity is implemented by the wrapper class (BouquetFlower) of Std Set controller.
 	public BouquetFlower[]  getBouquetFlowers() {
 		System.debug(LoggingLevel.DEBUG, 'Enter getBouquetFlowers()');
 
@@ -88,8 +91,9 @@ public with sharing class BouquetBuilderController {
 		return bouquetFlowers;
 	}
 
-	// 
+	// The color of the Pie chart 
 	public String summaryPieChartColorSet { get; set; }
+	// Data of the Pie chart
 	public SummaryPieData[] getSummaryPieData() {
 		System.debug(LoggingLevel.DEBUG, 'Enter getSummaryPieData()');
 
@@ -177,16 +181,16 @@ public with sharing class BouquetBuilderController {
     public Integer getPageNumber() {
         return setCon.getPageNumber();
     }
-
+    // Page count
     public Integer getPageCount() {
     	return (Integer)Math.ceil(setCon.getResultSize() * 1.0 / CurrentPageSize);
     }
-
+    // Check if it's the last page
 	public Boolean hasNext {
 		get { return setCon.getHasNext(); }
 		set;
 	}
-
+	// Check if it's the first page
 	public Boolean hasPrevious {
 		get { return setCon.getHasPrevious(); }
 		set;
@@ -216,7 +220,7 @@ public with sharing class BouquetBuilderController {
         setCon.next();
     }
 
-
+    // Controller action for the Flower Family change event
 	public void changeFlowerFamily() {
 		System.debug(LoggingLevel.DEBUG, 'Enter changeFlowerFamily()');
 
@@ -232,7 +236,6 @@ public with sharing class BouquetBuilderController {
     // Create StandardSetController for Bouquet flowers for the pagniation
     ApexPages.StandardSetController createStandardSetController() {
 		System.debug(LoggingLevel.DEBUG, 'Enter createStandardSetController()');
-
 
     	ApexPages.StandardSetController ctrl;
     	if (flowerFamily == FlowerFamily_AnyType) {
@@ -257,7 +260,8 @@ public with sharing class BouquetBuilderController {
 		return ctrl;
     }
 
- 
+ 	// Helper method to update bouquet flower information
+ 	// The information is kept across the pagination and filter change
     void updateBouquetFlowers() {
 		System.debug(LoggingLevel.DEBUG, 'Enter updateBouquetFlowers()');
 		System.debug(JSON.serialize(bouquetFlowers));
@@ -277,8 +281,13 @@ public with sharing class BouquetBuilderController {
 		System.debug(LoggingLevel.DEBUG, 'Exit updateBouquetFlowers()');
     }
 
+    // Save the record
 	public PageReference save() {
 		System.debug(LoggingLevel.DEBUG, 'Enter save()');
+
+		//ApexPages.getMessages().clear();
+
+
 		PageReference successPage = null; 
 
 		updateBouquetFlowers();
@@ -286,7 +295,9 @@ public with sharing class BouquetBuilderController {
 		Boolean isUpdate = bouquet.Id != null;
 		Set<Id> affectFlowerIds = new Set<Id>();
 
+		SavePoint sp;
 		try {
+			sp = Database.setSavePoint();
 			// Disable the Bloom trigger.
 			BouquetService.disableBloomTriggerLogic = true;
 
@@ -352,11 +363,14 @@ public with sharing class BouquetBuilderController {
 			service.updateUsedInventoryForFlowers(affectFlowerIds);
 
 			successPage = new ApexPages.StandardController(bouquet).view();
+
 		} catch (Exception ex) {
+			if (sp != null) Database.rollback(sp);
+
 			if (!isUpdate) 
 				bouquet.Id = null; 
-
-			ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, ex.getMessage()));
+			// Capture the exception and show it back on the page
+			ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, ex.getTypeName() + ' - ' + ex.getMessage()));
 
 		} finally {
 			BouquetService.disableBloomTriggerLogic = false; // re-enable it
@@ -366,6 +380,5 @@ public with sharing class BouquetBuilderController {
 		System.debug(LoggingLevel.DEBUG, 'Exit save()');
 
 		return successPage;
-		//return null;
 	}
 }
