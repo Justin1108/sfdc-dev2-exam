@@ -10,7 +10,7 @@ trigger BloomTrigger on Bloom__c (after insert, after update, after delete) {
 			}
 		} else if (Trigger.isDelete) {
 			// Trigger.old
-			for (Bloom__c b : (List<Bloom__c>)Trigger.new) {
+			for (Bloom__c b : (List<Bloom__c>)Trigger.old) {
 				bouquetIds.add(b.Bouquet__c);
 				flowerIds.add(b.Flower__c);
 			}

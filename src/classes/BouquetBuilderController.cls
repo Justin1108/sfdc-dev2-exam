@@ -152,6 +152,8 @@ public with sharing class BouquetBuilderController {
     	this.flowerMap = new Map<Id, Product2>();
     	this.flowerIdBloomMap = new Map<Id, Bloom__c>();
 
+    	this.bouquetFlowers = new List<BouquetFlower>(); 
+
     	if (this.bouquet.Id != null) {
 			for (Bloom__c bl : [SELECT Flower__c, Quantity__c, Flower__r.Name, Flower__r.Family, Flower__r.IsActive, Flower__r.Color__c, Flower__r.HTML_Color_Code__c, Flower__r.Cost__c, Flower__r.Initial_Inventory__c, Flower__r.Inventory_Remaining__c, Flower__r.Inventory_Used__c FROM Bloom__c WHERE Bouquet__c = :bouquet.Id]) {
 				this.flowerQuantityMap.put(bl.Flower__c, (Integer)bl.Quantity__c);
@@ -166,9 +168,10 @@ public with sharing class BouquetBuilderController {
     }
 
 
-    //public Boolean getHasMessages() {
-    //	return ApexPages.hasMessages();
-    //}
+    // Return true if there's error on page level
+    public Boolean getHasErrors() {
+    	return ApexPages.hasMessages(ApexPages.Severity.Error);
+    }
 
     // returns the page number of the current page set
     public Integer getPageNumber() {
@@ -209,7 +212,6 @@ public with sharing class BouquetBuilderController {
 
     // returns the next page of records
     public void next() {
-    	System.debug('3333');
      	updateBouquetFlowers();
         setCon.next();
     }
@@ -230,6 +232,7 @@ public with sharing class BouquetBuilderController {
     // Create StandardSetController for Bouquet flowers for the pagniation
     ApexPages.StandardSetController createStandardSetController() {
 		System.debug(LoggingLevel.DEBUG, 'Enter createStandardSetController()');
+
 
     	ApexPages.StandardSetController ctrl;
     	if (flowerFamily == FlowerFamily_AnyType) {
@@ -257,6 +260,7 @@ public with sharing class BouquetBuilderController {
  
     void updateBouquetFlowers() {
 		System.debug(LoggingLevel.DEBUG, 'Enter updateBouquetFlowers()');
+		System.debug(JSON.serialize(bouquetFlowers));
 
     	for (BouquetFlower bf : bouquetFlowers) {
     		if (bf.bloom.Quantity__c != null && bf.bloom.Quantity__c > 0) {
@@ -268,6 +272,8 @@ public with sharing class BouquetBuilderController {
     		}
     	}
 
+    	System.debug(JSON.serialize(this.flowerQuantityMap));
+    	System.debug(JSON.serialize(this.flowerMap));
 		System.debug(LoggingLevel.DEBUG, 'Exit updateBouquetFlowers()');
     }
 

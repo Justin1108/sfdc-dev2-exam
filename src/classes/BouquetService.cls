@@ -64,18 +64,31 @@ public without sharing class BouquetService {
 		System.debug(LoggingLevel.DEBUG, 'flowerIds: ' + JSON.serialize(flowerIds));
 
 		// Lock the flower records before update for data integrity
-		List<Product2> flowers = [SELECT Id FROM Product2 WHERE Id IN :flowerIds FOR UPDATE];
+		Map<Id, Product2> flowers = new Map<Id, Product2>([SELECT Id, Initial_Inventory__c FROM Product2 WHERE Id IN :flowerIds FOR UPDATE]);
 
 		AggregateResult[] results = [SELECT Flower__c, SUM(Quantity__c) FROM Bloom__c WHERE Flower__c IN :flowerIds GROUP BY Flower__c];
 		Map<Id, Product2> flowerMap = new Map<Id, Product2>();
 		for (AggregateResult r : results) {
 			Id flowerId = (Id)r.get('Flower__c');
+
 			Integer quantity = Integer.valueOf(r.get('expr0'));
 
 			flowerMap.put(flowerId, new Product2(
 				Id = flowerId,
 				Inventory_Used__c = quantity
 				));
+
+			flowers.remove(flowerId);
+		}
+
+		if (flowers.size() > 0) {
+			// Bloom record(s) have been removed, need to clear the Inventory_Used__c value
+			for (Product2 f : flowers.values()) {
+				flowerMap.put(f.Id, new Product2(
+					Id = f.Id,
+					Inventory_Used__c = 0
+					));
+			}
 		}
 
 		// Update the Product2/Flowers

@@ -1,25 +1,25 @@
-"NAME","ISACTIVE","FAMILY","COLOR__C","INVENTORY_USED__C","INITIAL_INVENTORY__C","INVENTORY_REMAINING__C","HTML_COLOR_CODE__C","COST__C"
-"Anastasia Painted Blue","true","Chrysanthemums","Blue","","120.0","120.0","#0000FF","0.25"
-"Barcelona","true","Carnations","Orange","","200.0","200.0","#FFA500","0.5"
-"Agropoli","true","Alstromeria","Purple","","160.0","160.0","#800080","0.5"
-"Anastasia Painted Green","true","Chrysanthemums","Green","","50.0","50.0","#008000","0.75"
-"Abracadabra","true","Carnations","Green","","130.0","130.0","#008000","0.75"
-"Tripolium pannonicum","true","Asters","White","","200.0","200.0","#FFFFFF","1.2"
-"Pink Protea","true","Exotic Blooms","Pink","","200.0","200.0","#FFC0CB","1.0"
-"Leopard Orchid","true","Exotic Blooms","Red","","200.0","200.0","#FF0000","0.8"
-"Yellow Solidago","true","Fillers","Yellow","","200.0","200.0","#FFFF00","0.25"
-"Lopez","true","Gladiolas","Yellow","","200.0","200.0","#FFFF00","0.25"
-"Camellia Foliage","true","Foliages","Green","","200.0","200.0","#008000","0.5"
-"Elegans","true","Gypsophila","White","","200.0","200.0","#FFFFFF","0.25"
-"Fastigiata","true","Gypsophila","White","","200.0","200.0","#FFFFFF","0.25"
-"Lilium CASA Blanca","true","Lilies","White","","200.0","200.0","#FFFFFF","0.5"
-"Lilium Silk Road","true","Lilies","Red","","200.0","200.0","#FF0000","0.75"
-"Lilium Commander In Chief","true","Lilies","Red","","200.0","200.0","#FF0000","0.75"
-"Sinuatum","true","Limonium","Purple","","200.0","200.0","#800080","0.75"
-"Humile","true","Limonium","White","","200.0","200.0","#FFFFFF","0.75"
-"Moth","true","Orchids","Pink","","200.0","200.0","#FFC0CB","1.0"
-"Red Rose Preservation","true","Preserved","Red","","200.0","200.0","#FF0000","1.0"
-"Nitida","true","Proteas","Yellow","","200.0","200.0","#FFFF00","1.0"
-"Petal Flower Rose","true","Roses","Other","","200.0","200.0","#000000","0.5"
-"Red Rose","true","Roses","Red","","200.0","200.0","#FF0000","0.5"
-"Yellow Rose","true","Roses","Yellow","","200.0","200.0","#FFFF00","0.5"
+NAME,ISACTIVE,FAMILY,COLOR__C,INVENTORY_USED__C,INITIAL_INVENTORY__C,COST__C
+Anastasia Painted Blue,TRUE,Chrysanthemums,Blue,,120,0.25
+Barcelona,TRUE,Carnations,Orange,,200,0.5
+Agropoli,TRUE,Alstromeria,Purple,,160,0.5
+Anastasia Painted Green,TRUE,Chrysanthemums,Green,,50,0.75
+Abracadabra,TRUE,Carnations,Green,,130,0.75
+Tripolium pannonicum,TRUE,Asters,White,,200,1.2
+Pink Protea,TRUE,Exotic Blooms,Pink,,200,1
+Leopard Orchid,TRUE,Exotic Blooms,Red,,200,0.8
+Yellow Solidago,TRUE,Fillers,Yellow,,200,0.25
+Lopez,TRUE,Gladiolas,Yellow,,200,0.25
+Camellia Foliage,TRUE,Foliages,Green,,200,0.5
+Elegans,TRUE,Gypsophila,White,,200,0.25
+Fastigiata,TRUE,Gypsophila,White,,200,0.25
+Lilium CASA Blanca,TRUE,Lilies,White,,200,0.5
+Lilium Silk Road,TRUE,Lilies,Red,,200,0.75
+Lilium Commander In Chief,TRUE,Lilies,Red,,200,0.75
+Sinuatum,TRUE,Limonium,Purple,,200,0.75
+Humile,TRUE,Limonium,White,,200,0.75
+Moth,TRUE,Orchids,Pink,,200,1
+Red Rose Preservation,TRUE,Preserved,Red,,200,1
+Nitida,TRUE,Proteas,Yellow,,200,1
+Petal Flower Rose,TRUE,Roses,Other,,200,0.5
+Red Rose,TRUE,Roses,Red,,200,0.5
+Yellow Rose,TRUE,Roses,Yellow,,200,0.5
