@@ -385,7 +385,96 @@ private class BouquetAppTest {
 
 	@isTest
 	static void testBulkUpsert() {
-		
-	}
+		List<Bouquet__c> bqList = new List<Bouquet__c>();
+		List<Product2> flowers = [SELECT Name, Family, Color__c, Cost__c FROM Product2 LIMIT 100];
+		List<Lead> customers = [SELECT Id, Street FROM Lead LIMIT 100];
+		Set<Id> customerIds = new Map<Id, Lead>(customers).keySet();
+		Integer index = 1;
+		for (Lead customer : customers) {
+			Bouquet__c bq = new Bouquet__c(
+				Customer__c = customer.Id,
+				Deliver_To__c = customer.Street,
+				Delivery_Date__c = Date.today(),
+				Message__c = 'Test Message ' + String.valueOf(index)
+				);
+			bqList.add(bq);
 
+			index += 1;
+		}
+
+		// Bulk insert of bouquet
+		insert bqList;
+		bqList = [SELECT Customer__c, Customer__r.Street, Deliver_To__c, Delivery_Date__c, Message__c FROM Bouquet__c LIMIT 100];
+		System.assertEquals(customers.size(), bqList.size());
+		System.assertEquals(bqList[0].Customer__r.Street, bqList[0].Deliver_To__c);
+		System.assertEquals(Date.today(), bqList[0].Delivery_Date__c);
+
+		// Bulk update of bouquet
+		for (Bouquet__c bq : bqList) {
+			bq.Message__c = 'Update Message';
+		}
+		update bqList;
+		bqList = [SELECT Customer__c, Customer__r.Street, Deliver_To__c, Delivery_Date__c, Message__c FROM Bouquet__c LIMIT 100];
+		System.assertEquals('Update Message', bqList[0].Message__c);
+
+		// Verify the Most_Used_Color__c is empty 
+		System.assertEquals(customers.size(), [SELECT Id FROM Lead WHERE Most_Used_Color__c=NULL AND Id IN :customerIds].size());
+
+		// Bulk insert of Bloom
+		Integer fIdx = 0;
+		Integer fCount = flowers.size();
+		List<Bloom__c> bmList = new List<Bloom__c>();
+		for (Bouquet__c bq : bqList) {
+			if (fIdx == fCount) fIdx = 0;
+			Product2 flower1 = flowers[fIdx++];
+			Bloom__c bm1 = new Bloom__c(
+				Bouquet__c = bq.Id,
+				Flower__c = flower1.Id,
+				Quantity__c = 1
+				);
+
+			if (fIdx == fCount) fIdx = 0;
+			Product2 flower2 = flowers[fIdx++];
+			Bloom__c bm2 = new Bloom__c(
+				Bouquet__c = bq.Id,
+				Flower__c = flower2.Id,
+				Quantity__c = 1
+				);
+
+			bmList.add(bm1);
+			bmList.add(bm2);
+		}
+
+		insert bmList;
+		// Verify to the right amount of Bloom__c records have been created;
+		System.assertEquals(bqList.size() * 2, [SELECT Id FROM Bloom__c LIMIT 500].size()); 
+
+		// Bulk update and remove of Blooms
+		List<Bloom__c> bmListUpdate = new List<Bloom__c>();
+		List<Bloom__c> bmListRemove = new List<Bloom__c>();
+		for (Bouquet__c bq : [SELECT Customer__c, (SELECT Id FROM Blooms__r) FROM Bouquet__c LIMIT 100]) {
+			Bloom__c bm1 = bq.Blooms__r[0];
+			Bloom__c bm2 = bq.Blooms__r[1];
+
+			bm1.Quantity__c = 2;
+			bmListUpdate.add(bm1);
+			bmListRemove.add(bm2);
+		}
+
+		update bmListUpdate;
+		delete bmListRemove;
+
+		bmList = [SELECT Id, Quantity__c, Flower__c, Bouquet__c, Flower__r.Color__c, Bouquet__r.Customer__r.Most_Used_Color__c FROM Bloom__c LIMIT 500];
+		System.assertEquals(customers.size(), bmList.size());  // Only one bloom per bouquet, the total number of blooms should be the same as bouquet/customer.
+		System.assertEquals(2, bmList[0].Quantity__c);
+		System.assertEquals(bmList[0].Bouquet__r.Customer__r.Most_Used_Color__c, bmList[0].Flower__r.Color__c); // Verify the most used color
+
+		// Verify Inventory used summary field
+		Product2 flower = [SELECT Initial_Inventory__c, Inventory_Used__c FROM Product2 WHERE Id = :bmList[0].Flower__c];
+		Integer totalUsed = 0;
+		for (Bloom__c bm : [SELECT Quantity__c FROM Bloom__c WHERE Flower__c = :flower.Id]) {
+			totalUsed += (Integer)bm.Quantity__c;
+		}
+		System.assertEquals(totalUsed, flower.Inventory_Used__c);
+	}
 }
