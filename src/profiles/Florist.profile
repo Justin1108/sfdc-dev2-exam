@@ -239,7 +239,7 @@
     </objectPermissions>
     <pageAccesses>
         <apexPage>BouquetBuilder</apexPage>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
     </pageAccesses>
     <tabVisibilities>
         <tab>Bouquet__c</tab>
