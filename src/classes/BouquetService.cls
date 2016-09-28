@@ -26,6 +26,8 @@ public without sharing class BouquetService {
 	}
 
 	// Update the Most_Used_Color__c field for the given customers by customerIds
+	// This method will throw exception out instead of capturing within. 
+	// The full data integrity should be enforced by the caller, such as the BouquetBuilder controller
 	public void updateMostUsedColorForCustomers(Set<Id> customerIds) {
 		System.debug(LoggingLevel.DEBUG, 'Enter BouquetService.updateMostUsedColorForCustomers()');
 		System.debug(LoggingLevel.DEBUG, 'customerIds: ' + JSON.serialize(customerIds));
@@ -62,6 +64,8 @@ public without sharing class BouquetService {
 	}
 
 	// Update the Inventory_Used__c field for the given flowers/Product2 by the flowerIds
+	// This method will throw exception out instead of capturing within. 
+	// The full data integrity should be enforced by the caller, such as the BouquetBuilder controller
 	public void updateUsedInventoryForFlowers(Set<Id> flowerIds) {
 		System.debug(LoggingLevel.DEBUG, 'Enter BouquetService.updateUsedInventoryForFlowers()');
 		System.debug(LoggingLevel.DEBUG, 'flowerIds: ' + JSON.serialize(flowerIds));

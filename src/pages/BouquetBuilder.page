@@ -62,7 +62,7 @@
                         <apex:inputField value="{!f.bloom.Quantity__c}" required="true" />
                     </apex:column>
                     <apex:column headerValue="{!$ObjectType.Product2.Fields.Name.Label}" >
-                        <apex:outputLink value="/{!f.flower.Id}" target="_blank">{!f.flower.Name}</apex:outputLink>
+                        <apex:outputLink value="{!URLFOR($Action.Product2.view, f.flower.Id)}" target="_blank">{!f.flower.Name}</apex:outputLink>
                     </apex:column>
                     <apex:column value="{!f.flower.Color__c}" style="background-color: {!f.flower.HTML_Color_Code__c}"/>
                     <apex:column value="{!f.flower.Family}" />
