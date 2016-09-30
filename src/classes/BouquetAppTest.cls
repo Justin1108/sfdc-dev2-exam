@@ -299,6 +299,46 @@ private class BouquetAppTest {
 
 	}
 
+	// Test BouquetBuilder for new record
+	@isTest
+	static void testNewPageWithException() {
+		PageReference bbRef = Page.BouquetBuilder;
+		Test.setCurrentPage(bbRef);
+
+		System.runAs(getFloristUserA()) {
+			Lead customer = [SELECT Street, FirstName, LastName FROM Lead LIMIT 1];
+
+			ApexPages.StandardController stdCtrl = new ApexPages.StandardController(new Bouquet__c());
+			BouquetBuilderController bbCtrl = new BouquetBuilderController(stdCtrl);
+
+			// Create a new bouquet 
+			Bouquet__c bouquet = (Bouquet__c)stdCtrl.getRecord();
+			bouquet.Customer__c = customer.Id;
+			bouquet.Deliver_To__c = customer.Street;
+			bouquet.Message__c = 'Test Message';
+			bouquet.Delivery_Date__c = Date.today();
+
+			// Set bouquet flowers
+			List<BouquetBuilderController.BouquetFlower> bouquetFlowers = bbCtrl.getBouquetFlowers();
+			bouquetFlowers[0].bloom.Quantity__c = 8000; // This will thrown a DML exception by the validation rule
+			Product2 flower1 = bouquetFlowers[0].flower;
+
+			bbCtrl.next();
+
+			bouquetFlowers = bbCtrl.getBouquetFlowers();
+			bouquetFlowers[0].bloom.Quantity__c = 4;
+			Product2 flower2 = bouquetFlowers[0].flower;
+
+			PageReference viewPage = bbCtrl.save();
+
+			// Verify the redirect after an unsucessful save
+			System.assertEquals(null, viewPage);
+			// Check if the bouquet record has not been created
+			System.assertEquals(0, [SELECT Deliver_To__c FROM Bouquet__c].size());
+		}		
+
+	}
+
 	// Test BoquetBuilder for existing record / Edit
 	@isTest
 	static void testEditPage() {
